@@ -1,0 +1,107 @@
+{
+  "忆江南": {
+    "description": "单调二十七字，三平韵，中间七言两句，以对偶为宜。",
+    "sections": [
+        {"chars": 3, "rhyme": false},
+        {"chars": 5, "rhyme": true},
+        {"chars": 7, "rhyme": true},
+        {"chars": 7, "rhyme": true},
+        {"chars": 5, "rhyme": false}
+    ],
+    "tone_pattern": [
+        "● ● ●",
+        "● ● ○ ○ ●",
+        "○ ● ○ ○ ● ● ○",
+        "○ ● ○ ○ ● ● ○",
+        "○ ● ● ○ ○"
+    ]
+},
+  "如梦令": {
+    "description": "单调三十三字，七仄韵，两个三字句用叠句。",
+    "sections": [
+      { "chars": 6, "rhyme": true },
+      { "chars": 6, "rhyme": true },
+      { "chars": 5, "rhyme": true },
+      { "chars": 4, "rhyme": false },
+      { "chars": 6, "rhyme": true },
+      { "chars": 6, "rhyme": true },
+      { "chars": 5, "rhyme": true },
+      { "chars": 4, "rhyme": false }
+    ],
+    "tone_pattern": [
+      "● ● ● ○ ○ ●",
+      "● ● ● ○ ○ ●",
+      "○ ● ● ○ ○ ●",
+      "● ● ●",
+      "● ● ● ○ ○ ●",
+      "● ● ● ○ ○ ●",
+      "○ ● ● ○ ○ ●",
+      "● ● ●"
+    ]
+  },
+  "浣溪沙": {
+    "description": "双调四十二字，上片三句三平韵，下片三句两平韵。",
+    "sections": [
+      { "chars": 7, "rhyme": true },
+      { "chars": 7, "rhyme": true },
+      { "chars": 7, "rhyme": true },
+      { "chars": 7, "rhyme": true },
+      { "chars": 7, "rhyme": true },
+      { "chars": 7, "rhyme": true }
+    ],
+    "tone_pattern": [
+      "○ ● ● ○ ○ ● ●",
+      "● ○ ○ ● ● ○ △",
+      "● ○ ○ ● ● ○ △",
+      "● ○ ● ● ○ ○ ●",
+      "● ○ ○ ● ● ○ △",
+      "● ○ ○ ● ● ○ △"
+    ]
+  },
+  "菩萨蛮": {
+    "description": "双调四十四字，上下片各四句，两仄韵，两平韵。",
+    "sections": [
+      { "chars": 4, "rhyme": false },
+      { "chars": 4, "rhyme": true },
+      { "chars": 4, "rhyme": false },
+      { "chars": 4, "rhyme": true },
+      { "chars": 4, "rhyme": false },
+      { "chars": 4, "rhyme": true },
+      { "chars": 4, "rhyme": false },
+      { "chars": 4, "rhyme": true }
+    ],
+    "tone_pattern": [
+      "● ● ○ ○ ● ●",
+      "○ ○ ● ● ○ ○ △",
+      "● ● ○ ○ ●",
+      "○ ○ ● ● ○ ○ △",
+      "● ● ○ ○ ● ●",
+      "○ ○ ● ● ○ ○ △",
+      "● ● ○ ○ ●",
+      "○ ○ ● ● ○ ○ △"
+    ]
+  },
+  "卜算子": {
+    "description": "双调四十四字，上下片各四句，两仄韵。",
+    "sections": [
+      { "chars": 5, "rhyme": true },
+      { "chars": 5, "rhyme": false },
+      { "chars": 5, "rhyme": false },
+      { "chars": 5, "rhyme": true },
+      { "chars": 5, "rhyme": true },
+      { "chars": 5, "rhyme": false },
+      { "chars": 5, "rhyme": false },
+      { "chars": 5, "rhyme": true }
+    ],
+    "tone_pattern": [
+      "● ● ○ ○ ●",
+      "● ● ○ ○ ●",
+      "● ● ○ ○ ● ● ○",
+      "● ● ○ ○ ●",
+      "● ● ○ ○ ●",
+      "● ● ○ ○ ●",
+      "● ● ○ ○ ● ● ○",
+      "● ● ○ ○ ●"
+    ]
+  }
+}
