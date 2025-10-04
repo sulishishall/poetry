@@ -1,4 +1,1 @@
-flask
-random
-json
-Os
+flask == 3.0.3

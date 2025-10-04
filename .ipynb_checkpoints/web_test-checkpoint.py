@@ -11,7 +11,7 @@ def load_json(path):
         return json.load(f)
 
 BASE = os.path.dirname(__file__)
-tang_path = os.path.join(BASE, "data", "chinese-poetry-master", "全唐诗", "唐诗三百首.json")
+tang_path = os.path.join(BASE, "data", "chinese-poetry-master", "水墨唐诗", "shuimotangshi.json")
 song_path = os.path.join(BASE, "data", "chinese-poetry-master", "宋词", "宋词三百首.json")
 yun_path = os.path.join(BASE, "zhonghua_xinyun.json")
 
@@ -202,74 +202,255 @@ choose_ci_html = """
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
-    <title>选择词牌 - 填词</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>选择词牌</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
         body {
-            font-family: 'Microsoft YaHei', sans-serif;
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
             background: #f8f9fa;
             color: #333;
+            padding: 20px;
+            touch-action: pan-x;
         }
-        .header {
+        h1 {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            color: #1a1a1a;
         }
-        .cipai-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 15px;
-            list-style: none;
-            padding: 0;
+        .cipai-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            gap: 16px;
+            padding: 10px 0 20px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
         }
-        .cipai-item {
+        .cipai-container::-webkit-scrollbar {
+            display: none;
+        }
+        .cipai-card {
+            flex: 0 0 auto;
+            width: 320px;
+            min-height: 340px;
             background: white;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
-        }
-        .cipai-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
-        }
-        .cipai-item a {
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            text-align: left;
+            transition: transform 0.2s, box-shadow 0.2s;
+            scroll-snap-align: start;
+            touch-action: manipulation;
             text-decoration: none;
-            color: #007bff;
-            font-size: 1.1em;
+            color: inherit;
+        }
+        .cipai-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 32px rgba(0,0,0,0.16);
+        }
+        .cipai-name {
+            font-size: 1.5em;
             font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 14px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 6px;
+            display: inline-block;
+        }
+        .cipai-desc {
+            font-size: 1em;
+            color: #444;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+        .cipai-example {
+            font-size: 0.95em;
+            color: #222;
+            line-height: 1.7;
+            padding: 16px;
+            background: #f8fdfa;
+            border-radius: 12px;
+            border-left: 5px solid #28a745;
+            white-space: pre-line;
+            overflow-wrap: break-word;
         }
         .back-btn {
             display: inline-block;
             margin-top: 20px;
-            color: #666;
+            color: #007bff;
             text-decoration: none;
-            font-size: 0.9em;
+            font-size: 1.1em;
+            text-align: center;
         }
         .back-btn:hover {
-            color: #007bff;
+            text-decoration: underline;
+        }
+        @media (max-width: 360px) {
+            .cipai-card {
+                width: 300px;
+                padding: 18px;
+            }
+            .cipai-example {
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>选择词牌名</h1>
-        <p>点击词牌名开始填词创作</p>
-    </div>
-    <ul class="cipai-list">
+    <h1>选择词牌</h1>
+    <div class="cipai-container" id="cipai-container">
         {% for name, data in cipai_data.items() %}
-        <li class="cipai-item">
-            <a href="{{ url_for('ci_form', cipai_name=name) }}">{{ name }}</a>
-            <div style="font-size: 0.9em; color: #666; margin-top: 5px;">
-                {{ data.description }}
+        <a href="/ci/{{ name }}" class="cipai-card" id="card-{{ name }}">
+            <div class="cipai-name">{{ name }}</div>
+            <div class="cipai-desc">
+                全词共 {{ data.get('total_chars', '未知') }} 字。
             </div>
-        </li>
+            {% if data.get('example') %}
+            <div class="cipai-example">
+                <div class="example-title">「{{ data.example.get('title', '无题') }}」</div>
+                <div class="example-author">—— {{ data.example.get('author', '佚名') }}</div>
+                <div class="example-text">{{ data.example.get('text', '') | trim }}</div>
+            </div>
+            {% else %}
+            <div class="cipai-example">
+                <div class="example-text">暂无经典例词。</div>
+            </div>
+            {% endif %}
+        </a>
         {% endfor %}
-    </ul>
-    <a href="javascript:window.history.back()" class="back-btn">← 返回</a>
+    </div>
+    <div style="text-align: center;">
+        <a href="javascript:window.history.back()" class="back-btn">← 返回</a>
+    </div>
+
+    <script>
+        // 页面加载后，检查 URL 是否有 highlight 参数，自动居中
+        window.addEventListener('load', function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const highlight = urlParams.get('highlight');
+            if (!highlight) return;
+
+            const card = document.getElementById('card-' + highlight);
+            if (card) {
+                const container = document.getElementById('cipai-container');
+                const containerWidth = container.clientWidth;
+                const cardLeft = card.offsetLeft;
+                const cardWidth = card.offsetWidth;
+                const scrollLeft = cardLeft - (containerWidth / 2) + (cardWidth / 2);
+                container.scrollTo({
+                    left: scrollLeft,
+                    behavior: 'smooth'
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+"""
+
+# ===== 新增：词牌列表页面 HTML =====
+# 新增：词牌列表页面 HTML
+cipai_list_html = """
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>选择词牌名</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+            background: #f8f9fa;
+            color: #333;
+            padding: 20px;
+            touch-action: pan-x;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+            color: #1a1a1a;
+        }
+        .cipai-container {
+            display: flex;
+            overflow-x: auto;
+            scroll-behavior: smooth;
+            gap: 16px;
+            padding: 10px 0 20px;
+            scrollbar-width: none;
+            -webkit-overflow-scrolling: touch;
+        }
+        .cipai-container::-webkit-scrollbar {
+            display: none;
+        }
+        .cipai-card {
+            flex: 0 0 auto;
+            width: 260px;
+            height: 180px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+            padding: 18px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            scroll-snap-align: start;
+        }
+        .cipai-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.14);
+        }
+        .cipai-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        .cipai-desc {
+            font-size: 1em;
+            color: #007bff;
+        }
+        .back-btn {
+            display: inline-block;
+            margin-top: 20px;
+            color: #007bff;
+            text-decoration: none;
+            font-size: 1.1em;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>选择词牌名</h1>
+    <div class="cipai-container">
+        {% for name, data in cipai_data.items() %}
+        <a href="/choose_ci_page?highlight={{ name }}" class="cipai-card">
+            <div class="cipai-name">{{ name }}</div>
+            <div class="cipai-desc">共 {{ data.get('total_chars', '未知') }} 字</div>
+        </a>
+        {% endfor %}
+    </div>
+    <div style="text-align: center;">
+        <a href="javascript:window.history.back()" class="back-btn">← 返回</a>
+    </div>
 </body>
 </html>
 """
@@ -2120,6 +2301,27 @@ def compose_qiyan_jueju():
 def compose_qiyan_lvshi():
     return render_template_string(qiyan_lvshi_html + floating_search_html)
 
+# 缓存 cipai_data，避免每次请求都读文件
+_cipai_data = None
+
+def load_cipai_data():
+    global _cipai_data
+    if _cipai_data is not None:
+        return _cipai_data
+    try:
+        json_path = os.path.join(app.static_folder, 'cipai.json')
+        with open(json_path, 'r', encoding='utf-8') as f:
+            _cipai_data = json.load(f)
+    except Exception as e:
+        print(f"加载 cipai.json 失败: {e}")
+        _cipai_data = {}
+    return _cipai_data
+
+@app.route('/compose/song')
+def choose_ci():
+    cipai_data = load_cipai_data()
+    return render_template_string(choose_ci_html, cipai_data=cipai_data)
+
 @app.route("/api/search_yun")
 def search_yun():
     char = request.args.get("char", "").strip()
@@ -2149,18 +2351,25 @@ def search_yun():
 def poem(ptype):
     if ptype == "tang":
         poem = random.choice(tang_list)
+
+        paragraphs = poem.get("paragraphs", [])
+        content = "\n".join(paragraphs)
+        return jsonify({
+            "title": poem.get("title", ""),
+            "author": poem.get("author", ""),
+            "content": content
+        })
     elif ptype == "song":
         poem = random.choice(song_list)
+        paragraphs = poem.get("paragraphs", [])
+        content = "\n".join(paragraphs)
+        return jsonify({
+            "title": poem.get("rhythmic", ""),
+            "author": poem.get("author", ""),
+            "content": content
+        })
     else:
         return jsonify({"title": "", "author": "", "content": "未知类别"})
-
-    paragraphs = poem.get("paragraphs", [])
-    content = "\n".join(paragraphs)
-    return jsonify({
-        "title": poem.get("title", ""),
-        "author": poem.get("author", ""),
-        "content": content
-    })
 
 @app.route('/ci')
 def ci_index():
@@ -2202,7 +2411,7 @@ def ci_form(cipai_name):
         sections.append({
             "index": i,
             "chars": sec["chars"],
-            "rhyme": sec["rhyme"]
+            #"rhyme": sec["rhyme"]
         })
 
     return render_template(
@@ -2211,6 +2420,28 @@ def ci_form(cipai_name):
         cipai=cipai,
         sections=sections  # 传入带序号的列表
     )
+
+def load_json(path):
+    """安全加载 JSON 文件"""
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except Exception as e:
+        print(f"加载 JSON 失败: {e}")
+        return {}
+
+# 获取项目根目录（假设静态文件在 static/ 下）
+BASE = os.path.dirname(os.path.abspath(__file__))
+
+@app.route('/compose/song')
+def compose_song():
+    # 加载 cipai.json
+    cipai_path = os.path.join(BASE, "static", "cipai.json")
+    cipai_data = load_json(cipai_path)
+    if not cipai_data:
+        return "词牌数据加载失败", 500
+    return render_template_string(cipai_list_html, cipai_data=cipai_data)
+
 
 
 @app.route('/ci/submit', methods=['POST'])

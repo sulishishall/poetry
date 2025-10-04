@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<head>
+    <meta charset="UTF-8">
+    <title>填写 {{ cipai_name }} - 填词</title>
+    <style>
+/* ===== 响应式设计：适配手机（iPhone）===== */
+
+/* 所有设备基础样式 */
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+    color: #333;
+    margin: 0;
+    padding: 20px;
+    background: #f9f9f9;
+}
+
+/* 容器：在小屏幕上窄一些 */
+.container {
+    max-width: 100%;
+    padding: 10px;
+}
+
+/* 表单区域 */
+form {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* 输入框：手机上占满宽度 */
+input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    font-size: 16px;
+    font-family: 'KaiTi', 'STKaiti', serif;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    box-sizing: border-box;
+    text-align: center;
+}
+
+/* 平仄提示样式优化 */
+.tone-pattern {
+    font-family: monospace;
+    font-size: 16px;
+    text-align: center;
+    margin: 6px 0;
+    color: #555;
+}
+
+/* 押韵标记 */
+.rhyme-mark {
+    color: #e63946;
+    font-weight: bold;
+    font-size: 0.9em;
+}
+
+/* 查韵浮窗：手机上更小、居中 */
+#floating-search {
+    width: 90%;
+    max-width: 320px;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    top: 10px;
+    padding: 12px;
+    font-size: 14px;
+}
+
+#floating-search h3 {
+    font-size: 1.1em;
+    margin-bottom: 8px;
+}
+
+#yun-input {
+    font-size: 16px;
+    padding: 10px;
+}
+
+#yun-result {
+    font-size: 14px;
+}
+
+#yun-result span {
+    font-size: 16px;
+    margin: 2px 4px;
+}
+
+/* 打开查韵按钮：手机上位置优化 */
+#open-floating-search {
+    bottom: 15px;
+    right: 15px;
+    padding: 12px 18px;
+    font-size: 16px;
+    border-radius: 10px;
+}
+
+/* 平仄校验提示：手机上紧凑显示 */
+.tone-hint {
+    text-align: center;
+    margin-top: 6px;
+    font-family: monospace;
+    letter-spacing: 2px;
+    font-weight: bold;
+}
+
+.tone-unit {
+    margin: 0 3px;
+    font-size: 16px;
+    font-weight: bold;
+}
+</style>
+</head>
+<!-- ===== 悬浮查韵部组件 ===== -->
+<div id="floating-search" style="
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 300px;
+    background: white;
+    border: 2px solid #007BFF;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    padding: 15px;
+    font-family: 'KaiTi', 'SimSun', serif;
+    z-index: 1000;
+    transition: transform 0.2s;
+    display: none;
+">
+    <div style="text-align: right; margin-bottom: 8px;">
+        <span id="floating-search-close" style="
+            color: #999;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.2em;
+        ">&times;</span>
+    </div>
+    <h3 style="margin: 0 0 10px 0; font-size: 1em; color: #333;">查韵部</h3>
+    <input type="text" id="yun-input" maxlength="1" placeholder="输入一个字"
+        style="
+            width: 100%;
+            padding: 8px;
+            font-size: 1.1em;
+            font-family: 'KaiTi', 'SimSun', serif;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        "/>
+    <div id="yun-result" style="
+        margin-top: 10px;
+        font-size: 0.95em;
+        line-height: 1.5;
+        color: #333;
+        min-height: 20px;
+        max-height: 200px;
+        overflow-y: auto;
+    "></div>
+</div>
+
+<!-- 打开浮动搜索的按钮 -->
+<button id="open-floating-search" style="
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 1em;
+    z-index: 1000;
+">打开查韵部</button>
+
+<script>
+// ===== 查韵部 JS 逻辑 =====
+const floatingSearch = document.getElementById('floating-search');
+const closeBtn = document.getElementById('floating-search-close');
+const openBtn = document.getElementById('open-floating-search');
+const input = document.getElementById('yun-input');
+const result = document.getElementById('yun-result');
+
+// 关闭按钮
+closeBtn.onclick = () => {
+    floatingSearch.style.display = 'none';
+};
+
+// 打开按钮
+openBtn.onclick = () => {
+    floatingSearch.style.display = 'block';
+};
+
+// 输入监听
+input.addEventListener('input', function() {
+    const char = this.value.trim();
+    if (char.length !== 1) {
+        result.innerHTML = '';
+        return;
+    }
+    fetch(`/api/search_yun?char=${encodeURIComponent(char)}`)
+        .then(r => r.json())
+        .then(data => {
+            if (data.error) {
+                result.innerHTML = `<span style="color: #e63946">${data.error}</span>`;
+            } else {
+                result.innerHTML = `
+                    <strong style="color: #007BFF;">${data.yun}</strong><br>
+                    ${data.zi.map(z => `<span style="margin: 2px 4px;">${z}</span>`).join('')}
+                `;
+            }
+        })
+        .catch(err => {
+            result.innerHTML = '<span style="color: #e63946;">查询失败</span>';
+            console.error(err);
+        });
+});
+</script>
+<body>
+    <div class="header">
+        <h1>填写《{{ cipai_name }}》</h1>
+        <p>{{ cipai.description }}</p>
+    </div>
+
+    <form method="post" action="{{ url_for('ci_submit') }}">
+        <input type="hidden" name="cipai_name" value="{{ cipai_name }}">
+
+        {% for section in sections %}
+<div class="section">
+<label for="line{{ section.index }}">
+    第{{ loop.index }}句（{{ section.chars }}字）
+    <span class="rhyme-mark" style="display: none;">[押韵]</span>
+</label>
+    <div class="tone-pattern">
+        {{ cipai.tone_pattern[section.index] if section.index < cipai.tone_pattern|length else '○ ○ ● ● ○ ○ ●' }}
+    </div>
+    <input 
+        type="text" 
+        id="line{{ section.index }}" 
+        name="line{{ section.index }}" 
+        maxlength="{{ section.chars }}" 
+        placeholder="请输入 {{ section.chars }} 个字"
+        required
+    >
+</div>
+{% endfor %}
+
+        <button type="submit" class="submit-btn">提交填词</button>
+    </form>
+
+    <a href="#" onclick="goBackToCiList(event)" class="back-btn">← 返回词牌列表</a>
+
+<script>
+function goBackToCiList(event) {
+    event.preventDefault();
+    const ciListUrl = "{{ url_for('ci_index') }}";
+    window.history.replaceState({}, "", ciListUrl);
+    window.location.href = ciListUrl; // 或 reload()
+}
+</script>
+
+
+<script>
+// ===== 注入词牌平仄数据 =====
+const CIPAI_TONE_PATTERN = {{ cipai.tone_pattern | tojson }};
+</script>
+
+<script>
+let toneDict = {};
+
+// 加载声调字典
+async function loadToneDict() {
+    try {
+        const res = await fetch('/static/char_tones.json');
+        toneDict = await res.json();
+        console.log('声调字典加载完成');
+    } catch (err) {
+        console.error('加载声调字典失败:', err);
+        alert('无法加载声调数据，平仄校验功能不可用。');
+    }
+}
+
+// 判断单字平仄：返回 '○'(平), '●'(仄), '?'(未知)
+function getToneSymbol(char) {
+    if (!char || !toneDict.hasOwnProperty(char)) return '?';
+    const tone = toneDict[char];
+    return (tone === 1 || tone === 2) ? '○' : '●'; // 1,2为平，3,4为仄
+}
+
+// 检查实际声调是否与模板声调兼容，并返回状态
+function checkTone(actual, expected) {
+    // 新增：处理押韵标记 ▲（仄韵）、△（平韵）
+    if (expected === '▲') {        // 押仄声韵
+        return actual === '●' ? 'correct' : 'wrong';
+    } else if (expected === '△') { // 押平声韵（或你用 △ 也可以替换）
+        return actual === '○' ? 'correct' : 'wrong';
+    }
+
+    // 原有逻辑
+    if (expected === '○') {
+        return actual === '○' ? 'correct' : 'wrong';
+    } else if (expected === '●') {
+        return actual === '●' ? 'correct' : 'wrong';
+    } else if (expected === '⊚' || expected === '⊙') {
+        // 🔴 关键修改：只要是 ○ 或 ●，都算“正确”（绿色）
+        return 'correct'; // 不再区分 recommended / acceptable
+    }
+    return 'unknown';
+}
+
+// 获取提示颜色
+function getStatusColor(status) {
+    switch (status) {
+        case 'correct':
+        case 'recommended':
+        case 'acceptable':   // 统一绿色
+            return '#28a745'; // 绿色：全部接受为“正确”
+        case 'wrong':
+            return '#dc3545'; // 红色：错误
+        default:
+            return '#6c757d'; // 灰色：未知
+    }
+}
+
+// ===== 动态显示押韵标记 =====
+function updateRhymeMarks() {
+    CIPAI_TONE_PATTERN.forEach((pattern, index) => {
+        if (!pattern) return;
+        const trimmed = pattern.replace(/\s+/g, '');
+        if (trimmed === '') return;
+
+        const lastChar = trimmed[trimmed.length - 1];
+        const label = document.querySelector(`label[for="line${index}"]`);
+        const rhymeSpan = label?.querySelector('.rhyme-mark');
+
+        if (rhymeSpan) {
+            // 如果末尾是 ▲ 或 △，显示押韵标记
+            if (lastChar === '▲' || lastChar === '△') {
+                rhymeSpan.style.display = 'inline';
+            } else {
+                rhymeSpan.style.display = 'none';
+            }
+        }
+    });
+}
+
+// 在 DOM 加载完成后调用
+document.addEventListener('DOMContentLoaded', async () => {
+    await loadToneDict();
+    updateRhymeMarks();
+
+    document.querySelectorAll('input[id^="line"]').forEach(input => {
+        input.addEventListener('input', function () {
+            const value = this.value.trim();
+            const sectionIndex = parseInt(this.id.replace('line', ''), 10);
+            const expectedLength = parseInt(this.getAttribute('maxlength'), 10);
+
+            const hintId = `tone-hint-${sectionIndex}`;
+            let hintEl = document.getElementById(hintId);
+            if (!hintEl) {
+                hintEl = document.createElement('div');
+                hintEl.id = hintId;
+                hintEl.className = 'tone-hint';
+                this.parentNode.insertBefore(hintEl, this.nextSibling);
+            }
+
+            // 字数检查
+            if (value.length !== expectedLength) {
+                hintEl.innerHTML = `<span style="color: #e63946;">需 ${expectedLength} 字，已输 ${value.length} 字</span>`;
+                return;
+            }
+
+            const expectedPatternStr = CIPAI_TONE_PATTERN[sectionIndex];
+            if (!expectedPatternStr) {
+                hintEl.innerHTML = `<span style="color: #999;">无平仄要求</span>`;
+                return;
+            }
+
+            const expectedTones = expectedPatternStr.replace(/\s+/g, '').split('');
+            const actualTones = Array.from(value).map(getToneSymbol);
+
+            const resultHtml = actualTones.map((actual, i) => {
+                if (i >= expectedTones.length) {
+                    return `<span class="tone-unit" style="color: #999;">${actual}</span>`;
+                }
+                const expected = expectedTones[i];
+                const status = checkTone(actual, expected);
+                const color = getStatusColor(status);
+
+                // 🔴 已删除 title 属性
+                return `
+                    <span class="tone-unit" 
+                          style="color: ${color};">
+                        ${actual}
+                    </span>`;
+            }).join('');
+
+            hintEl.innerHTML = resultHtml;
+        });
+    });
+});
+</script>
+<!-- ===== 说明浮窗组件 ===== -->
+<div id="help-modal" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 1001;
+    justify-content: center;
+    align-items: center;
+">
+    <div style="
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        width: 90%;
+        max-width: 400px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+        font-family: 'KaiTi', 'STKaiti', serif;
+        line-height: 1.8;
+    ">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 1.2em; color: #333;">符号说明</h3>
+            <span id="help-modal-close" style="
+                font-size: 1.5em;
+                font-weight: bold;
+                color: #999;
+                cursor: pointer;
+            ">&times;</span>
+        </div>
+        <div style="font-size: 16px; color: #333;">
+            <p><strong>○</strong>：平声</p>
+            <p><strong>●</strong>：仄声</p>
+            <p><strong>⊚</strong>：可平可仄，推荐平</p>
+            <p><strong>⊙</strong>：可平可仄，推荐仄</p>
+            <p><strong>△</strong>：押平声韵</p>
+            <p><strong>▲</strong>：押仄声韵</p>
+        </div>
+        <div style="text-align: center; margin-top: 16px;">
+            <button id="help-modal-ok" style="
+                padding: 8px 16px;
+                background-color: #007BFF;
+                color: white;
+                border: none;
+                border-radius: 6px;
+                cursor: pointer;
+                font-size: 1em;
+            ">知道了</button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== 说明按钮 ===== -->
+<button id="help-button" style="
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    z-index: 1000;
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+">?</button>
+
+<script>
+// ===== 说明功能 JS 逻辑 =====
+const helpModal = document.getElementById('help-modal');
+const helpButton = document.getElementById('help-button');
+const helpModalClose = document.getElementById('help-modal-close');
+const helpModalOk = document.getElementById('help-modal-ok');
+
+// 打开说明
+helpButton.onclick = () => {
+    helpModal.style.display = 'flex';
+};
+
+// 关闭说明（三种方式）
+const closeHelp = () => {
+    helpModal.style.display = 'none';
+};
+
+helpModalClose.onclick = closeHelp;
+helpModalOk.onclick = closeHelp;
+
+// 点击遮罩层关闭
+helpModal.onclick = (e) => {
+    if (e.target === helpModal) {
+        closeHelp();
+    }
+};
+</script>
+</body>
+</html>
